@@ -1,0 +1,8 @@
+# Downloaded data (public, re-fetch with scripts/download.py)
+data/
+models/*.pt
+__pycache__/
+*.pyc
+.pytest_cache/
+*.part
+results/*.log

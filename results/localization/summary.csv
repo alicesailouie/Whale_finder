@@ -1,0 +1,18 @@
+,value
+annotated_calls,794.0
+tracks_after_splitting,801.0
+L1_fixes,769.0
+L1_quality_ok,538.0
+L2_quality_ok,172.0
+L1_median_rms_s,0.07168196802378328
+L1_median_1sigma_xy_m,950.4266428290387
+L1_share_unambiguous (mirror_ratio>2),0.1729518855656697
+L1_right_side_vs_L2,0.6529126213592233
+L1_median_error_vs_L2_m (right side),355.1030257757064
+north_south_pairs,206.0
+L2_fixes,206.0
+L2_median_rms_s,0.09144260715032243
+L2_median_1sigma_xy_m,212.85824252546752
+L2_median_depth_m,-11.534459538552058
+L2_median_1sigma_z_m,615.8985588018749
+sound_speed_m_s,1450.0

@@ -1,0 +1,16 @@
+,value
+detections,495038
+distinct_upcalls,249395
+aerial_days_used,16
+A_r6_RMSE_vs_aerial,40.60850918288295
+A_r8_RMSE_vs_aerial,42.82975120676435
+A_r6_median_ratio_to_aerial,0.2074511937566804
+implied_call_rate_median_per_whale_h,1.2447071625400823
+implied_call_rate_IQR,0.9-1.7
+B_best_model,sqrt(calls_flight_window)
+B_RMSE,11.448314095860395
+B_CV_RMSE,13.24529590169354
+B_LOO_median_abs_error_whales,10.605311180072226
+B_peak_day,2019-04-27
+B_peak_estimate,276.1133460934813
+B_mean_Feb17_May15,58.01754472616858

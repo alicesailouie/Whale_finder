@@ -1,0 +1,9 @@
+[project]
+name = "dclde2027"
+version = "0.1.0"
+description = "Unofficial attempts at the DCLDE 2027 challenges: DAS fin whale localisation, killer whale detection/classification, right whale density."
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

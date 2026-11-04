@@ -9,8 +9,8 @@ case by case.
 |---|---|---|---|
 | **L-1** | Fin whale 2-D localisation, one DAS cable | Least-squares time-of-arrival fit with a grid-search start | Median 355 m from the two-cable fix when the left/right side is right; side correct 65% of the time |
 | **L-2** | Fin whale 3-D localisation, two DAS cables | Joint fit with cross-cable call association | 206 calls; median ±213 m (1σ) horizontally; depth not resolvable |
-| **DC-1** | Detect killer whale calls | Small CNN on log-mel spectrograms, tested on unseen recorders | _see below_ |
-| **DC-2** | Classify killer whale ecotype | Same CNN, 5 ecotypes | _see below_ |
+| **DC-1** | Detect killer whale calls | Small CNN on log-mel spectrograms, tested on unseen recorders | ROC AUC 0.88, F1 0.87 on recorders the model never saw |
+| **DC-2** | Classify killer whale ecotype | Same CNN, 5 ecotypes | Hard: balanced accuracy 0.25 (chance 0.20); resident vs transient AUC 0.71 |
 | **DE-1** | Right whale abundance, Cape Cod Bay | TDoA call association + quasi-Poisson calibration to aerial counts | Leave-one-out error ±13 whales (RMSE); reproduces the published pipeline |
 
 ---
@@ -94,7 +94,55 @@ faster still with a one-time `kerchunk` or `VirtualiZarr` index, which removes t
 
 ## Detection & Classification (DC-1, DC-2): killer whales in the Salish Sea
 
-_Results pending; see `results/killer_whales/`._
+The dataset ([Palmer et al. 2025](https://www.nature.com/articles/s41597-025-05281-5)) holds about 1.6 TB
+of audio from 11 organisations' hydrophones, annotated for killer whales of five ecotypes (southern and
+northern residents SRKW/NRKW, transient/Bigg's TKW, offshore OKW, and Southern Alaska residents SAR)
+plus humpbacks (HW), other biological sounds (UndBio) and background (AB).
+
+**Data.** Rather than download it all, [`build_kw_dataset.py`](scripts/build_kw_dataset.py) samples up to
+300 annotations per provider and label, and range-reads a 3 s clip around each one: **9,633 clips**.
+Each clip becomes a 96-band log-mel spectrogram (200 Hz–15.5 kHz at 32 kHz), with the median of each
+band removed to suppress the recorder's own noise floor.
+
+**Model.** A small 4-block CNN with SpecAugment-style masking, trained for 12 epochs on CPU.
+
+**Evaluation that means something.** Every recorder sounds different, so a random split would let the
+model learn the hydrophone rather than the whale. Instead, each of 5 folds holds out whole *providers*,
+and every score below comes from recorders the model never saw.
+
+![killer whales](results/killer_whales/killer_whales.png)
+
+**DC-1, detection** (killer whale vs humpback, other biological sounds and background)
+
+| Metric | Value |
+|---|---|
+| ROC AUC | 0.882 |
+| Average precision | 0.899 |
+| F1 at threshold 0.5 | 0.866 |
+| Balanced accuracy | 0.818 |
+| False alarms at 0.5: background / humpback / other biological | 15% / 20% / 56% |
+
+Detection carries across recorders well: AUC is 0.86–0.96 for most providers. SIMRES is the outlier
+(0.74). Most false alarms come from the "other biological" class, unidentified tonal sounds that are
+easily confused with killer whale calls even by ear.
+
+**DC-2, ecotype.** This is far harder, and the honest result is that a small model on 3 s clips barely
+does it across recorders:
+
+| Metric | Value |
+|---|---|
+| Balanced accuracy, 5 classes (chance 0.20) | 0.254 |
+| SRKW vs TKW ROC AUC | 0.709 |
+| SRKW vs TKW balanced accuracy | 0.660 |
+
+Each ecotype is recorded mostly by a few providers, so holding out a provider often removes most of that
+ecotype's training data. For example, all SAR clips come from one provider, so when it is held out the
+model has never heard SAR and labels it SRKW. Residents and transients, which have the most data across
+many recorders, do separate (AUC 0.71). Better DC-2 results would probably need longer context (whole
+call sequences, not 3 s clips), call-type labels, or a large pretrained audio model, plus much more of
+the 1.6 TB.
+
+Trained models are saved locally in `models/` (git-ignored); predictions are in `results/killer_whales/`.
 
 ---
 
@@ -138,7 +186,7 @@ python scripts/download.py            # ~450 MB of annotations, geometry and det
 python scripts/run_localization.py    # L-1, L-2      (~1 min)
 python scripts/run_density.py         # DE-1          (~1 min)
 python scripts/build_kw_dataset.py    # streams ~9,600 killer whale clips (~15-30 min, ~10 GB cached)
-python scripts/run_killer_whales.py   # DC-1, DC-2    (CPU, ~1 h)
+python scripts/run_killer_whales.py   # DC-1, DC-2    (CPU, ~3 h)
 python -m pytest
 ```
 

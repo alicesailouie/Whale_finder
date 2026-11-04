@@ -60,6 +60,36 @@ steadily south-west over about 10 hours: a whale swimming while it calls.
 fits almost as well. Depth is not recoverable with a constant-speed straight-ray model. A ray-traced or
 modal propagation model would be the next step.
 
+### Reading the raw DAS data from the cloud, without downloading it
+
+The 240 NetCDF files (103 GB) store their SNR images as compressed HDF5 chunks of about
+1.4 km × 3.7 s. [`src/dclde/das_remote.py`](src/dclde/das_remote.py) opens a file over HTTPS, which
+reads only its metadata, then fetches just the chunks that overlap the window you slice:
+
+```python
+from dclde import das_remote as R
+R.list_files()                                    # all 240 files, nothing downloaded
+w = R.window("North", "2021-11-04 02:00:02", dist_m=(45e3, 52e3), time_s=(3, 15))
+```
+
+[`scripts/remote_call_check.py`](scripts/remote_call_check.py) uses this to stream the raw window
+around several L-2 calls and overlay the arrival curve predicted from our fitted position:
+
+![remote check](results/localization/remote_call_check.png)
+
+The predicted curves follow the signal on both cables, including stretches with no annotated picks.
+
+| Access pattern (home broadband) | Time |
+|---|---|
+| Open a file (metadata only) | ~9 s |
+| 2 km × 10 s window | ~3 s |
+| A full call (~20 km × 20 s) | 20–50 s |
+| Every 500th channel over a whole file | ~270 s, because it touches nearly every chunk |
+
+Rule of thumb: stream targeted windows from home. For full-file or all-file processing, run the same code
+on a Google Cloud VM or in Colab, next to the bucket (US multi-region). Reading many files repeatedly is
+faster still with a one-time `kerchunk` or `VirtualiZarr` index, which removes the per-file metadata read.
+
 ---
 
 ## Detection & Classification (DC-1, DC-2): killer whales in the Salish Sea
@@ -119,6 +149,7 @@ in bulk: WAV clips are read with HTTP range requests.
 src/dclde/
   gcs.py        public-bucket access (listing, download, byte ranges)
   das_loc.py    DAS geometry, pick loading, track splitting, L-1/L-2 solvers, association
+  das_remote.py stream windows of the raw DAS NetCDF files from the bucket (no download)
   kw_data.py    killer whale annotations, clip streaming, log-mel features
   kw_model.py   CNN, augmentation, training
   narw.py       right whale detections, TDoA association, cue counting, quasi-Poisson
